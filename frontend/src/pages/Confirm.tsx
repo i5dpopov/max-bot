@@ -1,0 +1,120 @@
+import { useState } from 'react';
+import { createBooking, type Tenant, type Slot } from '../api/client';
+
+interface ConfirmProps {
+  tenant: Tenant;
+  date: string;
+  employee: Slot;
+  time: string;
+  onBack: () => void;
+  onDone: () => void;
+}
+
+export function Confirm({ tenant, date, employee, time, onBack, onDone }: ConfirmProps) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    if (!name || !phone) return;
+    setLoading(true);
+    try {
+      await createBooking({
+        employee_id: employee.employeeId,
+        date,
+        time,
+        client_name: name,
+        client_phone: phone,
+        tenant_code: tenant.code,
+      });
+      setResult('success');
+      setTimeout(onDone, 2500);
+    } catch {
+      setResult('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (result === 'success') {
+    return (
+      <div className="result">
+        <div className="result-icon">✅</div>
+        <h1>Запись создана!</h1>
+        <p>Ждём вас {date} в {time}</p>
+      </div>
+    );
+  }
+
+  if (result === 'error') {
+    return (
+      <div className="result">
+        <div className="result-icon">❌</div>
+        <h1>Ошибка</h1>
+        <p>Не удалось создать запись. Попробуйте ещё раз.</p>
+        <button className="btn btn-primary" style={{ marginTop: '16px' }} onClick={() => setResult(null)}>
+          Попробовать снова
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="screen-header">
+        <button className="back-btn" onClick={onBack}>←</button>
+        <h2>Подтверждение</h2>
+      </div>
+
+      <div className="booking-info">
+        <div className="booking-row">
+          <span className="booking-label">Заведение</span>
+          <span className="booking-value">{tenant.name}</span>
+        </div>
+        <div className="booking-row">
+          <span className="booking-label">Специалист</span>
+          <span className="booking-value">{employee.employeeName}</span>
+        </div>
+        <div className="booking-row">
+          <span className="booking-label">Дата</span>
+          <span className="booking-value">{date}</span>
+        </div>
+        <div className="booking-row">
+          <span className="booking-label">Время</span>
+          <span className="booking-value">{time}</span>
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Ваше имя</label>
+        <input
+          className="form-input"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Иван Иванов"
+        />
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Телефон</label>
+        <input
+          className="form-input"
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="+7 (999) 123-45-67"
+        />
+      </div>
+
+      <button
+        className="btn btn-primary"
+        onClick={handleSubmit}
+        disabled={loading || !name || !phone}
+      >
+        {loading ? 'Отправка...' : 'Записаться'}
+      </button>
+    </div>
+  );
+}
