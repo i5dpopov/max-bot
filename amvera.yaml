@@ -1,17 +1,10 @@
-meta:
-  environment: python
-  toolchain:
-    name: pip
-    version: "3.12"
-
-build:
-  requirementsPath: requirements.txt
-
-run:
-  command: uvicorn main:app --host 0.0.0.0 --port 80
-  containerPort: 80
-
-persistence:
-  - name: data
-    path: /data
-    size: 1Gi
+meta:
+  environment: node
+  toolchain:
+    name: browser
+    version: "20"
+
+build:
+  additionalCommands: npm run build
+  artifacts:
+    "dist/*": /
