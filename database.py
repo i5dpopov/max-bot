@@ -1,105 +1,1 @@
-import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Base, Tenant, Reminder
-
-DB_PATH = os.getenv("DB_PATH", "/app/data/tenants.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-
-def init_db():
-    """Создаёт таблицы и добавляет тестовых тенантов."""
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    Base.metadata.create_all(bind=engine)
-
-    session = SessionLocal()
-    try:
-        if session.query(Tenant).count() == 0:
-            t1 = Tenant(
-                code="barber_main",
-                name="Парикмахерская на Ленина",
-                type="barbershop",
-                address="г. Москва, ул. Ленина, д. 1",
-                phone="+7 (999) 123-45-67",
-                onec_url="http://178.21.11.91/booking/hs/booking",
-                onec_user=os.getenv("ONEC_USER"),
-                onec_password=os.getenv("ONEC_PASSWORD"),
-                is_active=True,
-            )
-            t2 = Tenant(
-                code="barber_center",
-                name="Парикмахерская в центре",
-                type="barbershop",
-                address="г. Москва, ул. Тверская, д. 10",
-                phone="+7 (999) 765-43-21",
-                onec_url="http://178.21.11.91/booking2/hs/booking",
-                onec_user=os.getenv("ONEC_USER"),
-                onec_password=os.getenv("ONEC_PASSWORD"),
-                is_active=True,
-            )
-            session.add_all([t1, t2])
-            session.commit()
-            print("✅ Добавлены тестовые тенанты: barber_main, barber_center")
-    finally:
-        session.close()
-
-
-def get_tenant_by_code(code: str):
-    session = SessionLocal()
-    try:
-        return session.query(Tenant).filter(
-            Tenant.code == code, Tenant.is_active == True
-        ).first()
-    finally:
-        session.close()
-
-
-def get_all_tenants():
-    session = SessionLocal()
-    try:
-        return session.query(Tenant).filter(Tenant.is_active == True).all()
-    finally:
-        session.close()
-
-
-def save_reminder(user_id: int, tenant_code: str, employee_name: str, date_str: str, time_str: str):
-    """Сохраняет напоминание о записи."""
-    session = SessionLocal()
-    try:
-        r = Reminder(
-            user_id=user_id,
-            tenant_code=tenant_code,
-            employee_name=employee_name,
-            date=date_str,
-            time=time_str,
-            reminded=False,
-        )
-        session.add(r)
-        session.commit()
-        print(f"✅ Напоминание сохранено: user={user_id}, {date_str} {time_str}")
-    finally:
-        session.close()
-
-
-def get_pending_reminders():
-    """Возвращает все ненапомненные записи."""
-    session = SessionLocal()
-    try:
-        return session.query(Reminder).filter(Reminder.reminded == False).all()
-    finally:
-        session.close()
-
-
-def mark_reminded(reminder_id: int):
-    """Помечает напоминание как отправленное."""
-    session = SessionLocal()
-    try:
-        r = session.query(Reminder).filter(Reminder.id == reminder_id).first()
-        if r:
-            r.reminded = True
-            session.commit()
-    finally:
-        session.close()
+import osfrom sqlalchemy import create_enginefrom sqlalchemy.orm import sessionmakerfrom models import Base, Tenant, ReminderDB_PATH = os.getenv("DB_PATH", "/data/tenants.db")DATABASE_URL = f"sqlite:///{DB_PATH}"engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)def init_db():    """Создаёт таблицы и добавляет тестовых тенантов."""    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)    Base.metadata.create_all(bind=engine)    session = SessionLocal()    try:        if session.query(Tenant).count() == 0:            t1 = Tenant(                code="barber_main",                name="Парикмахерская на Ленина",                type="barbershop",                address="г. Москва, ул. Ленина, д. 1",                phone="+7 (999) 123-45-67",                onec_url="http://178.21.11.91/booking/hs/booking",                onec_user=os.getenv("ONEC_USER"),                onec_password=os.getenv("ONEC_PASSWORD"),                is_active=True,            )            t2 = Tenant(                code="barber_center",                name="Парикмахерская в центре",                type="barbershop",                address="г. Москва, ул. Тверская, д. 10",                phone="+7 (999) 765-43-21",                onec_url="http://178.21.11.91/booking2/hs/booking",                onec_user=os.getenv("ONEC_USER"),                onec_password=os.getenv("ONEC_PASSWORD"),                is_active=True,            )            session.add_all([t1, t2])            session.commit()            print("✅ Добавлены тестовые тенанты: barber_main, barber_center")    finally:        session.close()def get_tenant_by_code(code: str):    session = SessionLocal()    try:        return session.query(Tenant).filter(            Tenant.code == code, Tenant.is_active == True        ).first()    finally:        session.close()def get_all_tenants():    session = SessionLocal()    try:        return session.query(Tenant).filter(Tenant.is_active == True).all()    finally:        session.close()def save_reminder(user_id: int, tenant_code: str, employee_name: str, date_str: str, time_str: str):    """Сохраняет напоминание о записи."""    session = SessionLocal()    try:        r = Reminder(            user_id=user_id,            tenant_code=tenant_code,            employee_name=employee_name,            date=date_str,            time=time_str,            reminded=False,        )        session.add(r)        session.commit()        print(f"✅ Напоминание сохранено: user={user_id}, {date_str} {time_str}")    finally:        session.close()def get_pending_reminders():    """Возвращает все ненапомненные записи."""    session = SessionLocal()    try:        return session.query(Reminder).filter(Reminder.reminded == False).all()    finally:        session.close()def mark_reminded(reminder_id: int):    """Помечает напоминание как отправленное."""    session = SessionLocal()    try:        r = session.query(Reminder).filter(Reminder.id == reminder_id).first()        if r:            r.reminded = True            session.commit()    finally:        session.close()
